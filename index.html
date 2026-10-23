@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base target="_top">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta charset="utf-8">
+<meta name="theme-color" content="#151B3B">
+<title>Church Launch System</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F3F4F9;--card:#fff;--ink:#161B33;--mut:#666D88;--line:#E1E4EF;--navy:#151B3B;--before:#4457D6;--during:#0E9F85;--after:#D9822B;--good:#0E8A5F;--warn:#A86B0C;--bad:#C93B3B;--gb:#E3F5EE;--wb:#FBF0DB;--bb:#FBE4E4}
+@media(prefers-color-scheme:dark){:root{--bg:#0E1122;--card:#181C33;--ink:#EEF0FA;--mut:#9AA2C2;--line:#2A2F4D;--navy:#0A0D1C;--before:#7C8CFF;--during:#2CC5A5;--after:#F0A24E;--good:#4BD6A0;--warn:#F0B95A;--bad:#FF8080;--gb:#12332A;--wb:#3A2D12;--bb:#401C1F}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 Figtree,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+#top{position:sticky;top:0;z-index:5;background:var(--navy);color:#fff;display:flex;align-items:center;gap:12px;padding:12px 16px;padding-top:calc(12px + env(safe-area-inset-top))}
+#top h1{margin:0;font-size:1.05rem;font-weight:700;line-height:1.2}
+#top small{display:block;opacity:.7;font-size:.8rem}
+#top .grow{flex:1;min-width:0}
+#back{display:none;background:rgba(255,255,255,.14);border:0;color:#fff;border-radius:10px;height:40px;padding:0 12px;font-weight:600}
+#pill{background:#fff;color:var(--navy);border-radius:99px;padding:5px 12px;font-weight:700;font-size:.85rem;white-space:nowrap}
+#app{display:grid;grid-template-columns:1fr;max-width:1180px;margin:0 auto}
+#nav{display:none}
+main{padding:16px;padding-bottom:calc(150px + env(safe-area-inset-bottom));min-width:0}
+h2{font-size:1.15rem;margin:26px 0 12px;display:flex;align-items:center;gap:8px}
+h2:first-child{margin-top:4px}
+h2 i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tile{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--c);border-radius:12px;padding:12px 14px;min-height:98px}
+.tile .v{font-size:1.5rem;font-weight:700;line-height:1.15;overflow-wrap:anywhere}
+.tile .l{font-weight:600;font-size:.9rem;margin-top:2px}
+.tile .s{color:var(--mut);font-size:.8rem}
+.tile.sk{background:linear-gradient(90deg,var(--card),var(--line),var(--card));background-size:200% 100%;animation:sk 1.4s linear infinite}
+@keyframes sk{to{background-position:-200% 0}}
+.meter{height:6px;border-radius:9px;background:var(--line);margin-top:8px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--c);transition:width .5s}
+.chips{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+.chip{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);text-align:left;font-weight:600}
+.chip span{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:color-mix(in srgb,var(--c) 16%,transparent);flex:none}
+.chip:active,.card:active{transform:scale(.985)}
+.bar{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.bar h2{margin:0;flex:1}
+.icon{background:var(--card);border:1px solid var(--line);border-radius:10px;width:44px;height:44px;font-size:1.1rem}
+.icon.spin{animation:rot .8s linear infinite}@keyframes rot{to{transform:rotate(360deg)}}
+.search{width:100%;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card);padding:0 14px;margin-bottom:12px}
+.list{display:grid;gap:10px}
+.card{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card.pend{opacity:.6}
+.r1{display:flex;gap:10px;justify-content:space-between;align-items:flex-start}
+.r1 b{font-weight:600;overflow-wrap:anywhere}
+.meta{display:flex;flex-wrap:wrap;gap:4px 16px;color:var(--mut);font-size:.85rem;margin-top:4px}
+.meta i{font-style:normal;opacity:.75;margin-right:4px}
+.badge{flex:none;border-radius:99px;padding:2px 10px;font-size:.78rem;font-weight:600;background:var(--line);color:var(--mut);white-space:nowrap}
+.badge.good{background:var(--gb);color:var(--good)}.badge.warn{background:var(--wb);color:var(--warn)}.badge.bad{background:var(--bb);color:var(--bad)}
+.empty{text-align:center;color:var(--mut);padding:40px 16px}
+.fab{position:fixed;right:16px;bottom:calc(74px + env(safe-area-inset-bottom));height:54px;padding:0 22px;border:0;border-radius:99px;background:var(--c,var(--before));color:#fff;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.28)}
+dialog{border:0;padding:0;color:var(--ink);background:var(--card);width:100%;max-width:none;max-height:92vh;margin:auto 0 0;border-radius:20px 20px 0 0}
+dialog::backdrop{background:rgba(10,13,28,.55)}
+dialog form{display:flex;flex-direction:column;max-height:92vh}
+.dh{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line)}
+.dh b{font-size:1.05rem}
+.db{padding:16px;overflow:auto;display:grid;grid-template-columns:1fr;gap:14px;-webkit-overflow-scrolling:touch}
+.df{display:flex;gap:10px;padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+label{display:block;font-size:.85rem;font-weight:600;margin-bottom:4px}
+label em{color:var(--bad);font-style:normal}
+input,select,textarea{width:100%;min-height:46px;border-radius:10px;border:1px solid var(--line);background:var(--bg);padding:9px 12px}
+textarea{min-height:84px;resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--c,var(--before));outline-offset:1px}
+.money{display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.money span{padding-left:12px;color:var(--mut)}.money input{border:0;background:none;outline:0}
+.calc{min-height:46px;border-radius:10px;background:var(--line);padding:11px 12px;font-weight:700}
+.btn{flex:1;min-height:48px;border-radius:12px;border:0;font-weight:700;background:var(--c,var(--before));color:#fff}
+.btn.ghost{flex:none;background:none;border:1px solid var(--line);color:var(--ink);padding:0 18px}
+.btn.del{flex:none;background:none;border:1px solid var(--bad);color:var(--bad);padding:0 16px}
+#toast{position:fixed;left:50%;bottom:calc(140px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:var(--navy);color:#fff;padding:10px 18px;border-radius:12px;opacity:0;pointer-events:none;transition:.25s;max-width:92vw;z-index:20;font-weight:600}
+#toast.on{opacity:1;transform:translate(-50%,0)}#toast.err{background:var(--bad)}
+
+#tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;display:grid;grid-template-columns:repeat(4,1fr);background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+#tabs button{border:0;background:none;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:.74rem;font-weight:600;color:var(--mut)}
+#tabs button span{font-size:1.3rem;line-height:1.2}
+#tabs button.on{color:var(--c);box-shadow:inset 0 3px 0 var(--c)}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--line);border-radius:12px;padding:3px;margin:14px 0 12px}
+.seg button{border:0;background:none;border-radius:10px;min-height:40px;font-weight:600;color:var(--mut)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.charts{display:grid;gap:12px;grid-template-columns:1fr;margin-top:12px}
+.chart{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+.chart h3{margin:0 0 10px;font-size:.95rem}
+.br{margin:9px 0}.br .t{display:flex;justify-content:space-between;gap:10px;font-size:.85rem}.br .t span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.br .t b{font-weight:600;white-space:nowrap}
+.bt{height:8px;border-radius:9px;background:var(--line);overflow:hidden;margin-top:4px}.bt i{display:block;height:100%;background:var(--c);border-radius:9px}
+.dn{display:flex;align-items:center;gap:16px}
+.ring{width:112px;height:112px;border-radius:50%;flex:none;display:grid;place-items:center}
+.ring b{width:70px;height:70px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:1.15rem}
+.lg{flex:1;min-width:0;font-size:.85rem}.lg div{display:flex;align-items:center;gap:7px;margin:4px 0}.lg i{width:10px;height:10px;border-radius:3px;flex:none}.lg span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nod{color:var(--mut);font-size:.9rem;padding:8px 0}
+.box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.box .meter{margin:8px 0 2px}
+.sec{margin:22px 0 10px;font-size:1.05rem}
+.kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}.kv:last-child{border:0}.kv b{text-align:right}
+.rep textarea{min-height:110px;margin-bottom:6px}
+.rep .btn{flex:none;min-height:40px;padding:0 18px;margin-bottom:12px}
+.hd{margin:0 0 4px;font-size:1.3rem}
+@media print{#top,#tabs,#nav,.fab,.noprint,#toast{display:none!important}body{background:#fff;color:#000}#app{display:block}main{padding:0}.tile,.box,.chart{break-inside:avoid}.rep textarea{border:0;resize:none;padding:0}}
+@media(min-width:600px){.charts{grid-template-columns:1fr 1fr}.kp{grid-template-columns:repeat(4,1fr)!important}.tiles{grid-template-columns:repeat(3,1fr)}.chips{grid-template-columns:repeat(3,1fr)}.db{grid-template-columns:1fr 1fr}.db .wide{grid-column:1/-1}}
+@media(min-width:900px){
+ #app{grid-template-columns:240px 1fr}
+ #nav{display:block;position:sticky;top:64px;align-self:start;padding:16px 8px 16px 16px;height:calc(100vh - 64px);overflow:auto}
+ #nav button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 12px;border-radius:10px;text-align:left;font-weight:500}
+ #nav button:hover{background:var(--line)}#nav button.on{background:var(--card);font-weight:700;box-shadow:inset 3px 0 0 var(--c)}
+ #nav h4{margin:14px 12px 4px;font-size:.85rem;color:var(--mut);font-weight:600}
+ .tiles{grid-template-columns:repeat(3,1fr)}.chips{display:none}
+ dialog{max-width:680px;margin:auto;border-radius:18px;max-height:88vh}
+ .fab{right:32px;bottom:28px}#tabs{display:none}main{padding-bottom:96px}#toast{bottom:28px}
+}
+@media(min-width:1100px){.tiles{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:899px){body.in #back{display:block}}
+.kp{grid-template-columns:repeat(2,1fr)}
+body.auth #tabs,body.auth #nav,body.auth #pill,body.auth #me,body.auth #back{display:none!important}
+body.auth #app{display:block}body.auth main{padding-bottom:40px}
+.login{max-width:420px;margin:20px auto;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:30px 24px 22px;box-shadow:0 20px 50px rgba(21,27,59,.14)}
+.lg-hero{width:68px;height:68px;border-radius:22px;background:linear-gradient(135deg,var(--before),var(--navy));display:grid;place-items:center;font-size:2.1rem;margin:0 auto 16px}
+.login h1{margin:0 0 4px;text-align:center;font-size:1.55rem}.login .lead{text-align:center;color:var(--mut);margin:0 0 18px}
+.login label{margin-top:12px}
+.pwrow{display:flex;gap:8px}.pwrow button{flex:none;width:52px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:1.1rem}
+.lerr{color:var(--bad);font-weight:600;min-height:1.5em;margin:12px 0 4px;text-align:center;font-size:.92rem}.lerr.ok{color:var(--good)}
+.login .btn{width:100%;margin-top:6px;flex:none}
+.link{display:block;margin:12px auto 0;background:none;border:0;color:var(--before);font-weight:600;padding:8px}
+.avatar{width:40px;height:40px;border-radius:50%;border:2px solid rgba(255,255,255,.45);background:var(--before);color:#fff;font-weight:700;flex:none}
+.me{display:flex;gap:14px;align-items:center;margin-bottom:6px}.me .avatar{width:54px;height:54px;font-size:1.2rem;border-color:var(--line)}
+.hint{color:var(--mut);font-size:.82rem;margin-top:4px}
+.tools{display:grid;gap:10px;grid-template-columns:1fr}.tools .btn{flex:none;min-height:46px;background:var(--navy)}
+@media(min-width:600px){.tools{grid-template-columns:repeat(3,1fr)}}
+.seg.s4{grid-template-columns:repeat(4,1fr)}.seg.s4 button{font-size:.88rem;padding:0 4px}
+.presets{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:12px 0 4px}
+.preset{display:grid;grid-template-columns:repeat(4,1fr);border:2px solid var(--line);border-radius:12px;background:var(--card);overflow:hidden;padding:0;text-align:center}
+.preset span{display:block;height:36px}.preset em{grid-column:1/-1;font-style:normal;font-weight:600;font-size:.82rem;padding:7px 4px}
+.preset:active{transform:scale(.97)}
+.cols{display:grid;gap:14px;margin:14px 0}.colr{display:flex;align-items:center;gap:14px;margin:0}.colr input{width:56px;height:56px;min-height:56px;padding:3px;flex:none;cursor:pointer}
+.colr span{font-weight:600}.colr small{display:block;color:var(--mut);font-weight:500;font-family:Consolas,Menlo,monospace}
+.mx{display:grid;gap:8px;margin-top:10px}.mxr{display:flex;align-items:center;gap:10px;justify-content:space-between}.mxr span{min-width:0}.mxr select{width:140px;flex:none;min-height:42px}
+.mxh{font-size:.8rem;font-weight:700;color:var(--mut);margin:12px 0 0}
+details summary{cursor:pointer;font-weight:600;padding:6px 0}
+.sgrid{display:grid;gap:14px;grid-template-columns:1fr}.sgrid .box{margin:0}
+.chipset{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+@media(min-width:600px){.presets{grid-template-columns:repeat(3,1fr)}.cols{grid-template-columns:1fr 1fr}.sgrid{grid-template-columns:1fr 1fr}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header id="top">
+  <button id="back" aria-label="Back to home">‹ Home</button>
+  <div class="grow"><h1 id="ttl">Church Launch</h1><small id="sub"></small></div>
+  <div id="pill" hidden></div>
+  <button id="me" class="avatar" hidden aria-label="My account"></button>
+</header>
+<div id="app"><nav id="nav"></nav><main id="main"></main></div>
+<nav id="tabs">
+  <button data-go="home" style="--c:var(--ink)"><span>🏠</span>Home</button>
+  <button data-go="phase:Before" style="--c:var(--before)"><span>📋</span>Before</button>
+  <button data-go="phase:During" style="--c:var(--during)"><span>🎯</span>During</button>
+  <button data-go="phase:After" style="--c:var(--after)"><span>📊</span>After</button>
+</nav>
+<dialog id="dlg"></dialog>
+<div id="toast" role="status"></div>
+
+<script>
+// ─── BACKEND URL CONFIG ───────────────────────────────────────────────────
+// Served by Google Apps Script (the normal way)? Leave BACKEND_URL empty: the page talks to the backend directly.
+// Hosting this file somewhere else (Vercel, Netlify, GitHub Pages, your own server)? Deploy the Apps Script as a
+// Web App ("Anyone" can access) and paste its full /exec address below, for example:
+//   const BACKEND_URL = 'https://script.google.com/macros/s/AKfycb.../exec';
+
+const BACKEND_URL = 'https://script.google.com/macros/s/AKfycbxap3RhSfWXXt_KbinNoc0tEE4v_O76EwQ9TFLmy6uFB62np4J0exbOXUBA0ljKmXK6/exec';   // ← paste your GAS /exec URL here (leave empty when deployed in GAS)
+
+// Optional: if you ALSO host Forms.html elsewhere, put its address here so the "Share forms" links use it.
+// Leave empty to use the Apps Script link (…/exec?page=feedback).
+const FORMS_URL = '';
+
+// ─── APP STATE ────────────────────────────────────────────────────────────
+const APP = { backendUrl: BACKEND_URL.trim(), inGas: typeof google !== 'undefined' && !!(google.script && google.script.run) };
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let TOKEN = ''; try { TOKEN = localStorage.getItem('cl_tok') || ''; } catch (e) {}
+const saveTok = t => { TOKEN = t || ''; try { t ? localStorage.setItem('cl_tok', t) : localStorage.removeItem('cl_tok'); } catch (e) {} };
+// One door to the backend. Inside Google it uses google.script.run; anywhere else it posts to BACKEND_URL.
+async function rpc(fn, args) {
+  if (APP.inGas) return new Promise((ok, no) => google.script.run.withSuccessHandler(ok).withFailureHandler(no)[fn](...args));
+  if (!APP.backendUrl) throw new Error('BACKEND_NOT_SET');
+  let res;
+  try {   // text/plain keeps this a "simple" request, so the browser needs no CORS pre-flight with Apps Script
+    res = await fetch(APP.backendUrl, {method: 'POST', headers: {'Content-Type': 'text/plain;charset=utf-8'}, body: JSON.stringify({fn: fn, args: args}), redirect: 'follow'});
+  } catch (e) { throw new Error('Could not reach the server. Check your internet connection.'); }
+  let j;
+  try { j = await res.json(); } catch (e) { throw new Error('The server sent an unexpected reply. Check that BACKEND_URL is your Web App /exec link and that access is set to “Anyone”.'); }
+  if (!j.ok) throw new Error(j.error || 'Something went wrong. Please try again.');
+  return j.data;
+}
+const api = (fn, ...a) => rpc(fn, [TOKEN, ...a]).catch(e => {
+  const m = (e && e.message) || '';
+  if (/AUTH_REQUIRED/.test(m)) signedOut(TOKEN ? 'Your session has ended. Please sign in again.' : '');
+  else if (/PW_CHANGE/.test(m)) showChange(true);
+  throw e;
+});
+const pub = (fn, ...a) => rpc(fn, a);
+function showSetup() {
+  document.body.classList.add('auth');
+  $('#main').innerHTML = `<div class="login" style="max-width:520px"><div class="lg-hero">🔌</div><h1>Connect the backend</h1><p class="lead">This page is hosted outside Google Apps Script, so it needs your Web App link.</p>
+    <div class="hint" style="line-height:1.8;font-size:.92rem">1. In Apps Script open <b>Deploy → Manage deployments</b> and copy the <b>Web app URL</b> (it ends in <code>/exec</code>).<br>
+    2. Open this file (<code>Index.html</code>) and paste it into <code>const BACKEND_URL = '';</code> at the top of the script.<br>
+    3. Save the file and publish it again. Make sure the Web App is set to run as <b>Me</b> with access for <b>Anyone</b>.</div></div>`;
+}
+let EMOJI = '⛪';
+const DEF_THEME = {navy: '#151B3B', before: '#4457D6', during: '#0E9F85', after: '#D9822B'};
+const hx = c => [1, 3, 5].map(i => parseInt(c.substr(i, 2), 16));
+const mixHex = (a, b, t) => { const x = hx(a), y = hx(b); return '#' + x.map((v, i) => ('0' + Math.round(v + (y[i] - v) * t).toString(16)).slice(-2)).join(''); };
+const lum = c => { const x = hx(c); return (0.299 * x[0] + 0.587 * x[1] + 0.114 * x[2]) / 255; };
+function applyTheme(t) {                       // the admin's colours, for everyone (dark mode gets matching shades)
+  t = Object.assign({}, DEF_THEME, t || {});
+  const L = c => mixHex(c, '#ffffff', .3), D = c => mixHex(c, '#000000', .4);
+  let el = document.getElementById('theme');
+  if (!el) { el = document.createElement('style'); el.id = 'theme'; document.head.appendChild(el); }
+  el.textContent = `:root{--navy:${t.navy};--before:${t.before};--during:${t.during};--after:${t.after}}@media(prefers-color-scheme:dark){:root{--navy:${D(t.navy)};--before:${L(t.before)};--during:${L(t.during)};--after:${L(t.after)}}}`;
+  PAL[0] = t.before; PAL[1] = t.during; PAL[2] = t.after;
+  const m = document.querySelector('meta[name=theme-color]'); if (m) m.content = t.navy;
+}
+async function loadPublic() {
+  try { const p = await pub('getPublicInfo'); applyTheme(p.theme); EMOJI = p.emoji || '⛪'; } catch (e) {}
+}
+const errText = e => String((e && e.message) || 'Something went wrong. Please try again.').replace(/^Error: /, '');
+
+function authShell(inner) {
+  S.boot = null; document.body.classList.add('auth'); document.body.classList.remove('in');
+  $('#ttl').textContent = 'Church Launch'; $('#sub').textContent = '';
+  $('#main').innerHTML = `<div class="login"><div class="lg-hero">${EMOJI}</div>${inner}</div>`;
+}
+function signedOut(msg) {
+  saveTok(''); S.user = null; S.data = {}; S.dash = null; S.rep = null; S.my = null; S.links = null; S.ulist = null;
+  showLogin(msg);
+}
+function showLogin(msg, email) {
+  authShell(`<h1>Welcome back</h1><p class="lead">Sign in to the church launch system.</p>
+    <label for="em">Email</label><input id="em" type="email" inputmode="email" autocomplete="username" placeholder="you@example.com" value="${esc(email || '')}">
+    <label for="pw">Password</label><div class="pwrow"><input id="pw" type="password" autocomplete="current-password" placeholder="Your password"><button type="button" id="eye" aria-label="Show password">👁</button></div>
+    <div class="lerr" id="lerr" role="alert">${esc(msg || '')}</div>
+    <button class="btn" id="lgo">Sign in</button><button class="link" id="forgot" type="button">Forgot your password?</button>`);
+  const err = (t, ok) => { const e = $('#lerr'); e.textContent = t; e.className = 'lerr' + (ok ? ' ok' : ''); };
+  $('#eye').onclick = () => { const p = $('#pw'); p.type = p.type === 'password' ? 'text' : 'password'; };
+  const go = async () => {
+    const em = $('#em').value.trim(), pw = $('#pw').value;
+    if (!em || !pw) return err('Enter your email and password.');
+    const b = $('#lgo'); b.disabled = true; b.textContent = 'Signing in…'; err('');
+    try { onSession(await pub('login', em, pw)); } catch (e) { b.disabled = false; b.textContent = 'Sign in'; err(errText(e)); }
+  };
+  $('#lgo').onclick = go; $('#pw').onkeydown = e => { if (e.key === 'Enter') go(); }; $('#em').onkeydown = e => { if (e.key === 'Enter') $('#pw').focus(); };
+  $('#forgot').onclick = async () => {
+    const em = $('#em').value.trim();
+    if (!/^\S+@\S+\.\S+$/.test(em)) return err('Type your email above first, then tap “Forgot your password?”.');
+    err('Sending…', 1);
+    try { await pub('forgotPassword', em); err('If that email has an account, a temporary password is on its way. Check your inbox.', 1); } catch (e) { err(errText(e)); }
+  };
+  ($('#em').value ? $('#pw') : $('#em')).focus();
+}
+function onSession(r) {
+  saveTok(r.token); S.user = r.user;
+  if (r.user.must) showChange(true); else start();
+}
+function showChange(forced) {
+  authShell(`<h1>${forced ? 'Choose a new password' : 'Change password'}</h1><p class="lead">${forced ? 'For your security, replace the temporary password before you continue.' : 'Pick a new password with at least 8 characters.'}</p>
+    <label for="p0">${forced ? 'Temporary password' : 'Current password'}</label><input id="p0" type="password" autocomplete="current-password">
+    <label for="p1">New password</label><input id="p1" type="password" autocomplete="new-password" placeholder="At least 8 characters">
+    <label for="p2">Confirm new password</label><input id="p2" type="password" autocomplete="new-password">
+    <div class="lerr" id="lerr" role="alert"></div><button class="btn" id="cgo">Update password</button>
+    <button class="link" id="cx" type="button">${forced ? 'Sign out' : 'Cancel'}</button>`);
+  const err = t => $('#lerr').textContent = t;
+  $('#cx').onclick = () => forced ? signedOut() : start();
+  const go = async () => {
+    const a = $('#p0').value, b = $('#p1').value, c = $('#p2').value;
+    if (!a || !b) return err('Please fill in every field.');
+    if (b.length < 8) return err('Your new password must be at least 8 characters.');
+    if (b !== c) return err('The two new passwords do not match.');
+    const btn = $('#cgo'); btn.disabled = true; btn.textContent = 'Saving…'; err('');
+    try { const r = await api('changePassword', a, b); saveTok(r.token); S.user = r.user; toast('Password updated'); start(); }
+    catch (e) { btn.disabled = false; btn.textContent = 'Update password'; if (!/AUTH_REQUIRED|PW_CHANGE/.test(e && e.message)) err(errText(e)); }
+  };
+  $('#cgo').onclick = go; $('#p2').onkeydown = e => { if (e.key === 'Enter') go(); }; $('#p0').focus();
+}
+const initials = n => String(n || '?').trim().split(/\s+/).slice(0, 2).map(x => x[0]).join('').toUpperCase();
+function openMe() {
+  const u = S.boot.user, dlg = $('#dlg');
+  dlg.style.setProperty('--c', 'var(--before)');
+  dlg.innerHTML = `<div class="dh"><b>My account</b><button type="button" class="icon" id="x" aria-label="Close">✕</button></div>
+    <div class="db" style="grid-template-columns:1fr"><div class="me"><div class="avatar">${esc(initials(u.name))}</div><div><b style="font-size:1.1rem">${esc(u.name)}</b><div class="hint" style="margin:0">${esc(u.email)}</div></div></div>
+    <div class="kv"><span>Role</span><b>${esc(u.role)}</b></div>${u.dept ? `<div class="kv"><span>Department</span><b>${esc(u.dept)}</b></div>` : ''}</div>
+    <div class="df"><button type="button" class="btn ghost" id="cp">Change password</button><button type="button" class="btn" id="so">Sign out</button></div>`;
+  $('#x').onclick = () => dlg.close();
+  $('#cp').onclick = () => { dlg.close(); showChange(false); };
+  $('#so').onclick = () => { dlg.close(); signedOut(); };
+  dlg.showModal();
+}
+$('#me').onclick = () => S.boot && openMe();
+const num = v => Number(v || 0).toLocaleString('en-NG');
+const money = v => '₦' + num(v);
+const pct = v => Math.round((v || 0) * 100) + '%';
+const PH = {Before:'before', During:'during', After:'after'};
+const S = { boot:null, cur:'home', data:{}, dash:null, rep:null, q:'', sub:'list', sset:'general', draft:null, cfg:null };
+const mod = k => S.boot.modules.find(m => m.key === k);
+const TODAY = new Date(Date.now() - new Date().getTimezoneOffset() * 6e4).toISOString().slice(0, 10);
+
+function calc(c, g) {
+  const v = c.a.map(k => +g(k) || 0);
+  return c.op === 'sum' ? v.reduce((a, b) => a + b, 0) : c.op === 'mul' ? v[0] * v[1] : c.op === 'sub' ? v[0] - v[1]
+    : c.op === 'gap' ? Math.max(0, v[0] - v[1]) : v[1] ? v[0] / v[1] : '';
+}
+function show(f, v) {
+  if (v === '' || v == null) return '';
+  if (f.t === 'money' || (f.t === 'calc' && f.c.fmt === 'm')) return money(v);
+  if (f.t === 'calc' && f.c.fmt === 'p') return pct(v);
+  if (f.t === 'num' || f.t === 'calc') return num(v);
+  if (f.t === 'date') { const d = new Date(v + 'T00:00:00'); return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric'}); }
+  return v;
+}
+const tone = v => /^(Completed|Done|Approved|Yes|Received|Resolved|Connected|Delivered|Secured|Contacted|Visited|Met|Within|Gave life|Rededicated)/i.test(v) ? 'good'
+  : /^(Blocked|Rejected|Cancelled|Critical|No( |$)|Overdue|Over budget|Below|Unbudgeted)/i.test(v) ? 'bad'
+  : /^(In Progress|Pending|Sourcing|Open|Revised|Planned|Medium|Nearly|Under-util|Wants a|Prayer|Will visit)/i.test(v) ? 'warn' : '';
+function flag(m, r) {
+  if (m.key === 'plan' && r.due && r.due < TODAY && !/^(Completed|Cancelled)$/.test(r.status)) return 'Overdue';
+  if (m.key === 'visitors' && r.date && (!r.fstatus || r.fstatus === 'Not Started') && (new Date(TODAY) - new Date(r.date)) / 864e5 > 3) return 'Overdue';
+  return '';
+}
+let tt;
+function toast(msg, err) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'on' + (err ? ' err' : '');
+  clearTimeout(tt); tt = setTimeout(() => t.className = '', err ? 4500 : 2200);
+}
+
+/* ---------- navigation (only shows what the signed-in role may use) ---------- */
+const REPORTS = {recon:{title:'Reconciliation',icon:'⚖️'}, eval:{title:'Evaluation',icon:'📈'}, report:{title:'Leadership report',icon:'📄'}};
+const PIC = {Before:'📋', During:'🎯', After:'📊'};
+const isPhase = k => k.startsWith('phase:');
+const phaseOf = k => k === 'home' ? '' : (k === 'users' || k === 'settings') ? 'Admin' : isPhase(k) ? k.slice(6) : REPORTS[k] ? 'After' : mod(k).phase;
+const phases = () => ['Before', 'During', 'After'].filter(p => S.boot.modules.some(m => m.phase === p) || (p === 'After' && S.perms.reports));
+function go(key, push = true) {
+  const ok = key === 'home' || (isPhase(key) && phases().includes(key.slice(6))) || ((key === 'users' || key === 'settings') && S.perms.users) || (REPORTS[key] && S.perms.reports) || (S.boot.modules.some(x => x.key === key));
+  if (!ok) key = 'home';
+  if (S.draft && key !== 'settings') { applyTheme(S.boot.s.theme); S.draft = null; }
+  S.cur = key; S.q = ''; S.sub = 'list';
+  if (push) history.pushState({k: key}, '');
+  document.body.classList.toggle('in', key !== 'home');
+  const m = mod(key);
+  $('#ttl').textContent = key === 'home' ? S.boot.s.church : key === 'users' ? 'Team & emails' : key === 'settings' ? 'Settings' : isPhase(key) ? key.slice(6) + ' the launch' : REPORTS[key] ? REPORTS[key].title : m.title;
+  $('#sub').textContent = S.boot.s.launch;
+  renderNav(); window.scrollTo(0, 0); view(); refresh();
+}
+function view() {
+  const k = S.cur;
+  if (k === 'home') renderHome(); else if (isPhase(k)) renderHome(k.slice(6)); else if (k === 'users') renderUsers(); else if (k === 'settings') renderSettings(); else if (REPORTS[k]) renderReport(k); else renderList();
+}
+function refresh(quiet) {
+  const k = S.cur;
+  if (k === 'home' || isPhase(k)) loadDash(quiet); else if (k === 'users') loadUsers(quiet); else if (k === 'settings') loadSettings(quiet); else if (REPORTS[k]) loadRep(quiet); else load(k, quiet);
+}
+window.onpopstate = e => S.boot && go((e.state && e.state.k) || 'home', false);
+$('#back').onclick = () => history.back();
+
+function renderNav() {
+  const ph = phaseOf(S.cur);
+  let h = `<button data-go="home" class="${S.cur === 'home' ? 'on' : ''}" style="--c:var(--ink)">🏠 ${S.perms.dash ? 'Dashboard' : 'Home'}</button>`;
+  phases().forEach(p => {
+    h += `<h4>${p} the launch</h4>`;
+    S.boot.modules.filter(m => m.phase === p).forEach(m => { h += `<button data-go="${m.key}" class="${S.cur === m.key ? 'on' : ''}" style="--c:var(--${PH[p]})">${m.icon} ${esc(m.title)}</button>`; });
+    if (p === 'After' && S.perms.reports) Object.keys(REPORTS).forEach(k => { h += `<button data-go="${k}" class="${S.cur === k ? 'on' : ''}" style="--c:var(--after)">${REPORTS[k].icon} ${REPORTS[k].title}</button>`; });
+  });
+  if (S.perms.users) h += `<h4>Admin</h4><button data-go="users" class="${S.cur === 'users' ? 'on' : ''}" style="--c:var(--before)">👥 Team & emails</button><button data-go="settings" class="${S.cur === 'settings' ? 'on' : ''}" style="--c:var(--before)">⚙️ Settings</button>`;
+  $('#nav').innerHTML = h;
+  const tabs = [['home', '🏠', 'Home', 'ink']].concat(phases().map(p => ['phase:' + p, PIC[p], p, PH[p]])).concat(S.perms.users ? [['users', '👥', 'Team', 'before']] : []);
+  const T = $('#tabs'); T.style.gridTemplateColumns = `repeat(${tabs.length},1fr)`;
+  T.innerHTML = tabs.map(t => `<button data-go="${t[0]}" style="--c:var(--${t[3]})"><span>${t[1]}</span>${t[2]}</button>`).join('');
+  const active = S.cur === 'home' ? 'home' : S.cur === 'users' ? 'users' : 'phase:' + ph;
+  T.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.go === active));
+}
+document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g && S.boot) go(g.dataset.go); });
+
+/* ---------- charts ---------- */
+const PAL = ['#4457D6', '#0E9F85', '#D9822B', '#C93B3B', '#8B5CF6', '#0EA5E9', '#E0A800', '#64748B'];
+const FM = {n: num, m: money, pc: v => Math.round(v) + '%'};
+function chart(kind, title, data, fmt, color) {
+  data = (data || []).filter(d => d[1]);
+  const body = !data.length ? '<div class="nod">No data yet</div>' : kind === 'donut' ? donut(data) : bars(data.slice(0, 8), FM[fmt || 'n'], color);
+  return `<div class="chart"><h3>${esc(title)}</h3>${body}</div>`;
+}
+function bars(d, f, color) {
+  const mx = Math.max(...d.map(x => x[1]), 1);
+  return d.map(x => `<div class="br" style="--c:${color || 'var(--before)'}"><div class="t"><span>${esc(x[0])}</span><b>${f(x[1])}</b></div><div class="bt"><i style="width:${Math.max(2, x[1] / mx * 100)}%"></i></div></div>`).join('');
+}
+function donut(d) {
+  const tot = d.reduce((t, x) => t + x[1], 0); let a = 0;
+  const stops = d.map((x, i) => { const s = a; a += x[1] / tot * 100; return `${PAL[i % 8]} ${s}% ${a}%`; }).join(',');
+  return `<div class="dn"><div class="ring" style="background:conic-gradient(${stops})"><b>${num(tot)}</b></div><div class="lg">${d.slice(0, 8).map((x, i) => `<div><i style="background:${PAL[i % 8]}"></i><span>${esc(x[0])}</span><b>${num(x[1])}</b></div>`).join('')}</div></div>`;
+}
+
+/* ---------- dashboard / phase pages ---------- */
+const tile = (c, v, l, s, bar) => `<div class="tile" style="--c:var(--${c})"><div class="v">${v}</div><div class="l">${l}</div><div class="s">${s || ''}</div>${bar != null ? `<div class="meter"><i style="width:${Math.round(Math.min(1, bar) * 100)}%"></i></div>` : ''}</div>`;
+const CH = {ready:['bars','Readiness by area','pc'], tasks:['donut','Tasks by status'], att:['bars','Attendance by service','n'], follow:['donut','Visitor follow-up status'], spend:['bars','Spending by category','m'], reach:['bars','Outreach reach by type','n']};
+const PCH = {Before:['ready','tasks'], During:['att','follow','spend'], After:['reach','spend','follow']};
+function renderHome(phase) {
+  const d = S.dash, sk = '<div class="tile sk"></div>'.repeat(6), ratio = (a, b) => b ? a / b : 0;
+  const T = d ? {
+    Before: [tile('before', pct(d.ready), 'Overall readiness', 'Average of 5 areas', d.ready),
+      tile('before', d.tasks.done, 'Tasks completed', 'of ' + d.tasks.total + ' planned'),
+      tile(d.tasks.overdue ? 'bad' : 'before', d.tasks.overdue, 'Overdue tasks', 'past due, not completed'),
+      tile('before', money(d.budget.proj), 'Budget projected', money(d.budget.appr) + ' approved'),
+      tile('before', money(d.funds.received), 'Funds received', money(d.funds.pledged) + ' pledged'),
+      tile('before', d.team.total, 'Workers & volunteers', d.team.ok + ' confirmed available')],
+    During: [tile('during', num(d.att.total), 'Total attendance', 'Target ' + num(d.att.target), ratio(d.att.total, d.att.target)),
+      tile('during', num(d.att.peak), 'Peak service', d.att.n + ' services recorded'),
+      tile('during', d.vis.first, 'First-time visitors', 'Target ' + d.vis.target, ratio(d.vis.first, d.vis.target)),
+      tile('during', d.vis.ret, 'Returning guests', d.vis.total + ' registered in total'),
+      tile('during', money(d.spend), 'Actual spend', pct(ratio(d.spend, d.budget.appr)) + ' of approved budget'),
+      tile(d.inc.open ? 'bad' : 'during', d.inc.open, 'Open incidents', 'of ' + d.inc.total + ' logged')],
+    After: [tile('after', money(Math.abs(d.budget.appr - d.spend)), 'Budget variance', d.budget.appr >= d.spend ? 'under approved budget' : 'over approved budget'),
+      tile('after', pct(ratio(d.att.total, d.att.target)), 'Attendance vs target', num(d.att.total) + ' of ' + num(d.att.target)),
+      tile('after', pct(ratio(d.out.reach, d.out.target)), 'Outreach reach vs target', num(d.out.reach) + ' people reached'),
+      tile('after', pct(ratio(d.vis.contacted, d.vis.total)), 'Visitors contacted', 'Target ' + pct(d.vis.goal), ratio(d.vis.contacted, d.vis.total)),
+      tile(d.vis.late ? 'bad' : 'after', d.vis.waiting, 'Awaiting first contact', d.vis.late + ' overdue (over 3 days)')]
+  } : {};
+  const chartsFor = list => '<div class="charts">' + (d ? list.map(k => chart(CH[k][0], CH[k][1], d.charts[k], CH[k][2], k === 'reach' ? 'var(--after)' : null)).join('') : '<div class="tile sk" style="min-height:150px"></div>'.repeat(2)) + '</div>';
+  const D = S.perms.dash;
+  let h = phase ? '' : myTasksHtml();
+  (phase ? [phase] : phases()).forEach(p => {
+    const c = PH[p];
+    h += `<h2 style="--c:var(--${c})"><i></i>${p} the launch</h2>${D ? `<div class="tiles">${d ? T[p].join('') : sk}</div>` : ''}<div class="chips" style="--c:var(--${c})">` +
+      S.boot.modules.filter(m => m.phase === p).map(m => `<button class="chip" data-go="${m.key}"><span>${m.icon}</span>${esc(m.title)}</button>`).join('') +
+      (p === 'After' && S.perms.reports ? Object.keys(REPORTS).map(k => `<button class="chip" data-go="${k}"><span>${REPORTS[k].icon}</span>${REPORTS[k].title}</button>`).join('') : '') + '</div>';
+    if (phase && D) h += `<h2 style="--c:var(--${c})"><i></i>Charts</h2>` + chartsFor(PCH[p]);
+  });
+  if (!phase && D) h += '<h2 style="--c:var(--ink)"><i></i>Visual summary</h2>' + chartsFor(['ready', 'tasks', 'att', 'follow', 'spend', 'reach']) + shareHtml();
+  if (!phase && S.perms.users) h += '<h2 style="--c:var(--before)"><i></i>Admin</h2><div class="chips" style="--c:var(--before)"><button class="chip" data-go="users"><span>👥</span>Team & emails</button><button class="chip" data-go="settings"><span>⚙️</span>Settings</button></div>';
+  $('#main').innerHTML = h;
+  document.querySelectorAll('[data-task]').forEach(b => b.onclick = () => openTask(b.dataset.task));
+  document.querySelectorAll('[data-open]').forEach(b => b.onclick = () => window.open(formUrl(b.dataset.open), '_blank'));
+  document.querySelectorAll('[data-copy]').forEach(b => b.onclick = async () => {
+    const u = formUrl(b.dataset.copy);
+    try { await navigator.clipboard.writeText(u); toast('Link copied'); } catch (e) { prompt('Copy this link', u); }
+  });
+}
+const FORMS = [['feedback', '💬', 'Feedback form', 'Congregation shares feedback and suggestions'], ['register', '📝', 'Quick registration form', 'Visitors register themselves in a minute'],
+  ['firsttimer', '🌱', 'First-timer card', 'Detailed card for first-time guests'], ['outreach', '🗣️', 'Outreach data form', 'Outreach teams record each person they meet'],
+  ['attendance', '🔢', 'Service attendance form', 'Ushers count people during a service']];
+function myTasksHtml() {
+  const t = S.my; if (!t || !t.length) return '';
+  const late = x => x.due && x.due < TODAY;
+  return `<h2 style="--c:var(--before)"><i></i>My tasks <small style="color:var(--mut);font-weight:500">${t.length}</small></h2><div class="list">` +
+    t.slice(0, 6).map(x => `<button class="card" data-task="${esc(x.id)}"><div class="r1"><b>${esc(x.activity)}</b><span class="badge ${late(x) ? 'bad' : tone(x.status)}">${late(x) ? 'Overdue' : esc(x.status)}</span></div>
+      <div class="meta"><span><i>Due</i>${esc(show({t: 'date'}, x.due) || 'No date')}</span>${x.priority ? `<span><i>Priority</i>${esc(x.priority)}</span>` : ''}</div></button>`).join('') +
+    (t.length > 6 ? `<button class="chip" data-go="plan" style="justify-content:center">See all ${t.length} tasks</button>` : '') + '</div>';
+}
+async function openTask(id) {
+  const m = mod('plan'); if (!m) return;
+  if (!S.data.plan) await load('plan', true);
+  const r = (S.data.plan || []).find(x => x.id === id);
+  if (r) openForm(m, r); else go('plan');
+}
+const formsBase = () => FORMS_URL || S.links || '';
+const formUrl = k => { const b = formsBase(); return b + (b.indexOf('?') > -1 ? '&' : '?') + 'page=' + k; };
+function shareHtml() {
+  if (!formsBase()) return '';
+  return '<h2 style="--c:var(--ink)"><i></i>Share forms</h2><div class="list">' + FORMS.map(f => `<div class="box" style="margin:0"><div class="r1"><b>${f[1]} ${f[2]}</b></div><div class="meta">${f[3]}</div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn" style="min-height:42px" data-open="${f[0]}">Open</button><button class="btn ghost" style="min-height:42px" data-copy="${f[0]}">Copy link</button></div></div>`).join('') + '</div>';
+}
+async function loadDash(quiet) {
+  if (S.cur === 'home') {
+    api('getMyTasks').then(r => { S.my = r; if (S.cur === 'home') view(); }).catch(() => {});
+    if (S.perms.dash && !S.links && !FORMS_URL) api('getLinks').then(r => { S.links = r.base; if (S.cur === 'home') view(); }).catch(() => {});
+  }
+  if (!S.perms.dash) return;
+  try { S.dash = await api('getDashboard'); if (S.cur === 'home' || isPhase(S.cur)) view(); }
+  catch (e) { if (!quiet) toast('Could not load dashboard', 1); }
+}
+
+/* ---------- per-tab KPIs and charts ---------- */
+const sm = (a, k) => a.reduce((t, r) => t + (+r[k] || 0), 0);
+const cn = (a, f) => a.filter(f).length;
+const grp = (a, k, vk) => { const o = {}; a.forEach(r => { const v = r[k] || 'Unspecified'; o[v] = (o[v] || 0) + (vk ? (+r[vk] || 0) : 1); }); return Object.entries(o).filter(e => e[1]).sort((x, y) => y[1] - x[1]); };
+const avg = (a, b) => b ? a / b : 0;
+const ST = {
+  plan: a => { const t = a.filter(r => r.status !== 'Cancelled'), d = cn(t, r => r.status === 'Completed'), od = cn(t, r => flag(mod('plan'), r));
+    return {k: [['Active tasks', t.length, 'excluding cancelled'], ['Completed', d, pct(avg(d, t.length)) + ' done'], ['Overdue', od, 'need attention', od], ['Blocked', cn(t, r => r.status === 'Blocked'), 'waiting on something', 0]],
+      c: [['donut', 'Tasks by status', grp(a, 'status')], ['bars', 'Tasks by department', grp(t, 'dept')]]}; },
+  budget: a => { const ap = a.filter(r => r.approval === 'Approved'), pe = a.filter(r => r.approval !== 'Approved');
+    return {k: [['Projected', money(sm(a, 'projected')), a.length + ' budget lines'], ['Approved', money(sm(ap, 'approved')), ap.length + ' lines approved'], ['Awaiting approval', money(sm(pe, 'projected')), pe.length + ' lines'], ['Largest line', money(Math.max(0, ...a.map(r => +r.projected || 0))), 'projected cost']],
+      c: [['bars', 'Projected cost by category', grp(a, 'cat', 'projected'), 'm'], ['donut', 'Approval status', grp(a, 'approval')]]}; },
+  funding: a => { const p = sm(a, 'pledged'), r = sm(a, 'received');
+    return {k: [['Pledged', money(p), a.length + ' sources'], ['Received', money(r), pct(avg(r, p)) + ' of pledged'], ['Outstanding', money(p - r), 'still to collect', p - r > 0 ? 1 : 0], ['Fully received', cn(a, x => +x.received >= +x.pledged), 'sources']],
+      c: [['bars', 'Received by funding type', grp(a, 'type', 'received'), 'm'], ['bars', 'Outstanding by source', grp(a, 'source', 'outstanding'), 'm']]}; },
+  teams: a => ({k: [['People', a.length, 'registered'], ['Available', cn(a, r => r.availability === 'Yes'), 'confirmed'], ['Briefed', cn(a, r => r.briefed === 'Yes'), 'trained / briefed'], ['To confirm', cn(a, r => r.availability !== 'Yes'), 'availability pending', cn(a, r => r.availability !== 'Yes')]],
+      c: [['donut', 'By category', grp(a, 'category')], ['bars', 'People by department', grp(a, 'dept')]]}),
+  outreach: a => { const t = a.filter(r => r.status !== 'Cancelled');
+    return {k: [['Activities', t.length, cn(t, r => r.status === 'Done') + ' done'], ['People reached', num(sm(a, 'reached')), 'target ' + num(sm(a, 'target'))], ['Contacts captured', num(sm(a, 'contacts')), 'decisions & details'], ['Follow-up requests', num(sm(a, 'followups')), 'to action']],
+      c: [['bars', 'People reached by type', grp(a, 'type', 'reached')], ['donut', 'Status', grp(a, 'status')]]}; },
+  logistics: a => ({k: [['Items', a.length, 'requirements'], ['Fully secured', cn(a, r => !(+r.gap) && a.length), 'no gap'], ['Units still needed', num(sm(a, 'gap')), 'across all items', sm(a, 'gap') > 0 ? 1 : 0], ['Estimated cost', money(sm(a, 'cost')), 'all items']],
+      c: [['donut', 'Status', grp(a, 'status')], ['bars', 'Units still needed by category', grp(a, 'cat', 'gap')]]}),
+  attendance: a => ({k: [['Total attendance', num(sm(a, 'total')), 'all services'], ['Peak service', num(Math.max(0, ...a.map(r => +r.total || 0))), 'highest head-count'], ['Services', a.length, 'recorded'], ['Average', num(Math.round(avg(sm(a, 'total'), a.length))), 'per service']],
+      c: [['bars', 'Attendance by service', grp(a, 'service', 'total')], ['donut', 'Who attended', [['Men', sm(a, 'men')], ['Women', sm(a, 'women')], ['Youth', sm(a, 'youth')], ['Children', sm(a, 'children')]]]]}),
+  visitors: a => { const c = cn(a, r => r.fstatus && r.fstatus !== 'Not Started'), od = cn(a, r => flag(mod('visitors'), r));
+    return {k: [['Registered', a.length, cn(a, r => r.vtype === 'Returning') + ' returning'], ['First-time', cn(a, r => r.vtype === 'First-time'), 'new visitors'], ['Contacted', pct(avg(c, a.length)), c + ' of ' + a.length], ['Overdue follow-up', od, 'no contact in 3+ days', od]],
+      c: [['donut', 'Follow-up status', grp(a, 'fstatus')], ['bars', 'How they heard', grp(a, 'heard')], ['bars', 'Interest / request', grp(a, 'interest')]]}; },
+  activities: a => ({k: [['Activities', a.length, 'logged'], ['Participants', num(sm(a, 'actual')), 'actual'], ['Participation', pct(avg(sm(a, 'actual'), sm(a, 'planned'))), 'actual vs planned'], ['Services covered', grp(a, 'service').length, 'programmes']],
+      c: [['bars', 'Participants by service', grp(a, 'service', 'actual')], ['bars', 'Participants by department', grp(a, 'dept', 'actual')]]}),
+  expenses: a => ({k: [['Total spent', money(sm(a, 'amount')), a.length + ' payments'], ['Largest payment', money(Math.max(0, ...a.map(r => +r.amount || 0))), 'single expense'], ['Average payment', money(Math.round(avg(sm(a, 'amount'), a.length))), 'per entry'], ['Categories', grp(a, 'cat').length, 'with spending']],
+      c: [['bars', 'Spend by category', grp(a, 'cat', 'amount'), 'm'], ['donut', 'Payment method', grp(a, 'method')]]}),
+  incidents: a => { const o = cn(a, r => r.status !== 'Resolved'), hi = cn(a, r => /^(High|Critical)$/.test(r.severity));
+    return {k: [['Logged', a.length, 'incidents'], ['Open', o, 'not yet resolved', o], ['High / critical', hi, 'severity', hi], ['Resolved', cn(a, r => r.status === 'Resolved'), 'closed']],
+      c: [['bars', 'Incidents by type', grp(a, 'type')], ['donut', 'Severity', grp(a, 'severity')]]}; },
+  contacts: a => { const dec = cn(a, r => /^(Gave life|Rededicated)/.test(r.response)), nf = cn(a, r => !r.fstatus || r.fstatus === 'Not Started');
+    return {k: [['People met', a.length, 'recorded'], ['Decisions', dec, 'gave life / rededicated'], ['Need follow-up', nf, 'not yet contacted', nf], ['With email', pct(avg(cn(a, r => r.email), a.length)), cn(a, r => r.phone) + ' have a phone']],
+      c: [['donut', 'Responses', grp(a, 'response')], ['bars', 'People met by activity', grp(a, 'activity')], ['bars', 'By age group', grp(a, 'ageGroup')]]}; },
+  feedback: a => ({k: [['Items', a.length, 'logged'], ['Still open', cn(a, r => r.status !== 'Done'), 'not done'], ['Done', cn(a, r => r.status === 'Done'), 'completed'], ['Lessons learned', cn(a, r => r.type === 'Lesson Learned'), 'captured']],
+      c: [['donut', 'By type', grp(a, 'type')], ['donut', 'By status', grp(a, 'status')], ['bars', 'By area', grp(a, 'area')]]})
+};
+
+/* ---------- list ---------- */
+function renderList() {
+  const m = mod(S.cur); if (!m) return;
+  const rows = S.data[m.key], c = PH[m.phase], st = rows ? ST[m.key](rows) : null;
+  let h = `<div class="bar" style="--c:var(--${c})"><h2 style="--c:var(--${c})"><i></i>${esc(m.title)} <small style="color:var(--mut);font-weight:500">${rows ? rows.length : ''}</small></h2><button class="icon" id="rf" aria-label="Refresh">↻</button></div>`;
+  h += '<div class="tiles kp">' + (st ? st.k.map(k => tile(k[3] ? 'bad' : c, k[1], k[0], k[2])).join('') : '<div class="tile sk"></div>'.repeat(4)) + '</div>';
+  h += `<div class="seg"><button data-sub="list" class="${S.sub === 'list' ? 'on' : ''}">Records</button><button data-sub="charts" class="${S.sub === 'charts' ? 'on' : ''}">Charts</button></div>`;
+  if (S.sub === 'charts') {
+    h += '<div class="charts" style="margin-top:0">' + (st ? st.c.map(x => chart(x[0], x[1], x[2], x[3], `var(--${c})`)).join('') : '<div class="tile sk" style="min-height:150px"></div>') + '</div>';
+  } else {
+    h += `<input class="search" id="q" type="search" placeholder="Search ${esc(m.title.toLowerCase())}" value="${esc(S.q)}" autocomplete="off">`;
+    if (!rows) h += '<div class="list">' + '<div class="tile sk" style="--c:var(--line);min-height:68px"></div>'.repeat(4) + '</div>';
+    else {
+      const q = S.q.toLowerCase(), f = rows.filter(r => !q || JSON.stringify(Object.values(r)).toLowerCase().includes(q));
+      h += f.length ? '<div class="list">' + f.map(r => card(m, r)).join('') + '</div>' : `<div class="empty">${rows.length ? 'Nothing matches your search.' : (m.rw ? 'No records yet. Tap “Add” to record the first one.' : 'No records to show yet.')}</div>`;
+    }
+  }
+  if (m.rw) h += `<button class="fab" id="add" style="--c:var(--${c})">+ Add</button>`;
+  const typing = document.activeElement && document.activeElement.id === 'q', pos = typing ? document.activeElement.selectionStart : 0;
+  $('#main').innerHTML = h;
+  const q = $('#q');
+  if (q) { q.oninput = e => { S.q = e.target.value; renderList(); }; if (typing) { q.focus(); q.setSelectionRange(pos, pos); } }
+  document.querySelectorAll('[data-sub]').forEach(b => b.onclick = () => { S.sub = b.dataset.sub; renderList(); });
+  $('#rf').onclick = () => load(m.key);
+  if ($('#add')) $('#add').onclick = () => openForm(m);
+  document.querySelectorAll('.card').forEach(el => el.onclick = () => { const r = S.data[m.key].find(x => x.id === el.dataset.id); if (r && !r._p) openForm(m, r); });
+}
+function card(m, r) {
+  const fd = k => m.fields.find(f => f.k === k);
+  const fl = flag(m, r), bv = fl || (m.b && r[m.b]);
+  const meta = m.s.map(k => { const f = fd(k), v = show(f, r[k]); return v ? `<span><i>${esc(f.l.split(/ \/ | \(/)[0])}</i>${esc(v)}</span>` : ''; }).join('');
+  return `<button class="card ${r._p ? 'pend' : ''}" data-id="${esc(r.id)}"><div class="r1"><b>${esc(r[m.p] || '(untitled)')}</b>${bv ? `<span class="badge ${fl ? 'bad' : tone(bv)}">${esc(bv)}</span>` : ''}</div><div class="meta">${meta}${r._p ? '<span>Saving…</span>' : ''}</div></button>`;
+}
+async function load(key, quiet) {
+  const b = $('#rf'); if (b && !quiet) b.classList.add('spin');
+  try {
+    const rows = await api('getRecords', key);
+    if (!(S.data[key] || []).some(r => r._p)) S.data[key] = rows.reverse();
+    if (key === 'plan') api('getPeople').then(p => { S.boot.people = p; }).catch(() => {});
+  } catch (e) { if (!quiet) toast('Could not load. Check your connection.', 1); S.data[key] = S.data[key] || []; }
+  if (S.cur === key) renderList();
+}
+
+/* ---------- reconciliation / evaluation / report ---------- */
+async function loadRep(quiet) {
+  try { S.rep = await api('getReports'); if (REPORTS[S.cur]) renderReport(S.cur); }
+  catch (e) { if (!quiet) toast('Could not load report', 1); }
+}
+const rfmt = (v, f) => f === 'p' ? pct(v) : num(v);
+function reconHtml(r) {
+  const f = r.funds;
+  let h = '<div class="tiles kp">' + tile('after', money(f.approved), 'Approved budget', 'signed off') + tile('after', money(f.spend), 'Actual spend', pct(avg(f.spend, f.approved)) + ' of approved') +
+    tile(f.approved >= f.spend ? 'good' : 'bad', money(Math.abs(f.approved - f.spend)), 'Budget variance', f.approved >= f.spend ? 'under budget' : 'over budget') +
+    tile(f.balance >= 0 ? 'good' : 'bad', money(Math.abs(f.balance)), 'Cash position', f.balance >= 0 ? 'funds received exceed spend' : 'spend exceeds funds received') + '</div>';
+  h += '<h3 class="sec">Budget vs actual by category</h3>';
+  h += r.cats.length ? r.cats.map(c => `<div class="box"><div class="r1"><b>${esc(c.name)}</b><span class="badge ${tone(c.status)}">${esc(c.status)}</span></div>
+    <div class="meter" style="--c:var(${c.use > 1 ? '--bad' : '--after'})"><i style="width:${Math.min(100, c.use * 100)}%"></i></div>
+    <div class="meta"><span><i>Projected</i>${money(c.proj)}</span><span><i>Approved</i>${money(c.appr)}</span><span><i>Actual</i>${money(c.act)}</span><span><i>Variance</i>${c.variance < 0 ? '-' : ''}${money(Math.abs(c.variance))}</span><span><i>Used</i>${pct(c.use)}</span></div></div>`).join('') : '<div class="empty">Add budget lines and expenses to see the reconciliation.</div>';
+  h += `<h3 class="sec">Funds reconciliation</h3><div class="box"><div class="kv"><span>Pledged / expected</span><b>${money(f.pledged)}</b></div><div class="kv"><span>Received</span><b>${money(f.received)}</b></div>
+    <div class="kv"><span>Outstanding</span><b>${money(f.outstanding)}</b></div><div class="kv"><span>Spent</span><b>${money(f.spend)}</b></div><div class="kv"><span>Balance (received − spent)</span><b style="color:var(${f.balance < 0 ? '--bad' : '--good'})">${f.balance < 0 ? '-' : ''}${money(Math.abs(f.balance))}</b></div></div>`;
+  return h;
+}
+function evalHtml(r) {
+  const met = r.metrics.filter(m => m.rate === 'Met / Exceeded').length;
+  let h = '<div class="tiles kp">' + tile('after', met + ' of ' + r.metrics.length, 'Targets met', 'met or exceeded') + tile('after', r.metrics.filter(m => m.rate === 'Nearly met').length, 'Nearly met', '75–99% of target') +
+    tile(r.metrics.some(m => m.rate === 'Below target') ? 'bad' : 'good', r.metrics.filter(m => m.rate === 'Below target').length, 'Below target', 'need attention') + '</div><h3 class="sec">Planned vs actual</h3>';
+  h += r.metrics.map(m => `<div class="box"><div class="r1"><b>${esc(m.name)}</b><span class="badge ${tone(m.rate)}">${esc(m.rate)}</span></div>
+    <div class="meter" style="--c:var(${m.ach >= 1 ? '--good' : m.ach >= .75 ? '--warn' : '--bad'})"><i style="width:${Math.min(100, m.ach * 100)}%"></i></div>
+    <div class="meta"><span><i>Target</i>${rfmt(m.target, m.fmt)}</span><span><i>Actual</i>${rfmt(m.actual, m.fmt)}</span><span><i>Achievement</i>${pct(m.ach)}</span></div></div>`).join('');
+  h += '<h3 class="sec">Department performance</h3><div class="charts" style="margin-top:0">' + chart('bars', 'Planning tasks completed by department', r.depts.map(d => [d.name + ' (' + d.done + '/' + d.total + ')', d.pct]), 'pc', 'var(--after)') + '</div>';
+  return h;
+}
+function reportHtml(r) {
+  const d = r.dash, f = r.funds, s = r.s;
+  const dt = new Date(s.date + 'T00:00:00').toLocaleDateString('en-GB', {day: 'numeric', month: 'long', year: 'numeric'});
+  let h = `<div class="rep"><div class="bar"><div style="flex:1"><h2 class="hd" style="margin:0">${esc(s.church)}</h2><div style="color:var(--mut)">${esc(s.launch)} · Launch date ${dt}</div></div><button class="icon noprint" id="rf">↻</button></div>
+  <h3 class="sec">1. Headline results</h3><div class="tiles kp">` +
+    tile('after', pct(d.ready), 'Pre-launch readiness', d.tasks.done + ' of ' + d.tasks.total + ' tasks done', d.ready) + tile('during', num(d.att.total), 'Total attendance', 'Target ' + num(d.att.target), avg(d.att.total, d.att.target)) +
+    tile('during', d.vis.first, 'First-time visitors', 'Target ' + d.vis.target, avg(d.vis.first, d.vis.target)) + tile('after', pct(avg(d.vis.contacted, d.vis.total)), 'Visitors contacted', 'Target ' + pct(d.vis.goal)) +
+    tile('before', money(f.received), 'Funds received', money(f.pledged) + ' pledged') + tile(f.approved >= f.spend ? 'good' : 'bad', money(f.spend), 'Actual spend', pct(avg(f.spend, f.approved)) + ' of approved budget') + '</div>';
+  h += `<h3 class="sec">2. Budget and funds</h3><div class="box">Spending of ${money(f.spend)} was ${pct(avg(f.spend, f.approved))} of the approved budget of ${money(f.approved)}, which is ${money(Math.abs(f.approved - f.spend))} ${f.approved >= f.spend ? 'under' : 'over'} budget. Funds received were ${money(f.received)} against ${money(f.pledged)} pledged (${money(f.outstanding)} outstanding), leaving a ${f.balance >= 0 ? 'surplus' : 'shortfall'} of ${money(Math.abs(f.balance))}.</div>`;
+  h += '<h3 class="sec">3. Evaluation summary</h3><div class="box">' + r.metrics.map(m => `<div class="kv"><span>${esc(m.name)}</span><b>${rfmt(m.actual, m.fmt)} / ${rfmt(m.target, m.fmt)} <span class="badge ${tone(m.rate)}">${esc(m.rate)}</span></b></div>`).join('') + '</div>';
+  h += '<h3 class="sec">4. Narrative</h3>' + r.narr.map(n => `<label>${esc(n.t)}</label><textarea data-n="${n.k}" rows="${Math.max(4, n.text.split('\n').length + 1)}" placeholder="Write here…">${esc(n.text)}</textarea><button class="btn noprint" data-save="${n.k}">Save ${esc(n.t.toLowerCase())}</button>`).join('');
+  h += '<button class="btn noprint" id="pr" style="background:var(--navy);width:100%;margin-top:6px">🖨 Print / save as PDF</button></div>';
+  return h;
+}
+function renderReport(k) {
+  const r = S.rep, R = REPORTS[k];
+  let h = '';
+  if (!r) h = `<div class="bar"><h2 style="--c:var(--after)"><i></i>${R.title}</h2></div><div class="tiles kp">${'<div class="tile sk"></div>'.repeat(4)}</div>`;
+  else if (k === 'report') h = reportHtml(r);
+  else h = `<div class="bar"><h2 style="--c:var(--after)"><i></i>${R.title}</h2><button class="icon" id="rf" aria-label="Refresh">↻</button></div>` + (k === 'recon' ? reconHtml(r) : evalHtml(r));
+  const keep = document.activeElement && document.activeElement.dataset && document.activeElement.dataset.n;
+  if (keep) return;
+  $('#main').innerHTML = h;
+  const rf = $('#rf'); if (rf) rf.onclick = () => { rf.classList.add('spin'); loadRep(); };
+  const pr = $('#pr'); if (pr) pr.onclick = () => window.print();
+  document.querySelectorAll('[data-save]').forEach(b => b.onclick = async () => {
+    const key = b.dataset.save, t = document.querySelector(`[data-n="${key}"]`).value;
+    try { await api('saveNarrative', key, t); r.narr.find(n => n.k === key).text = t; toast('Saved'); } catch (e) { toast('Could not save', 1); }
+  });
+}
+
+/* ---------- form ---------- */
+function fieldHtml(f, v) {
+  const req = f.r ? ' required' : '', id = ' name="' + f.k + '"';
+  let inp;
+  if (f.t === 'select') inp = `<select${id}${req}><option value="">Select…</option>${(S.boot.lists[f.o] || []).map(o => `<option>${esc(o)}</option>`).join('')}</select>`;
+  else if (f.t === 'long') inp = `<textarea${id}${req}></textarea>`;
+  else if (f.t === 'money') inp = `<div class="money"><span>₦</span><input${id}${req} type="number" inputmode="decimal" min="0" step="any"></div>`;
+  else if (f.t === 'num') inp = `<input${id}${req} type="number" inputmode="numeric" min="0" step="any">`;
+  else if (f.t === 'calc') inp = `<div class="calc" data-calc="${f.k}">–</div>`;
+  else if (f.t === 'user') inp = `<select${id}><option value="">Not assigned</option>${(S.boot.people || []).map(p => `<option value="${esc(p.email)}">${esc(p.name)} · ${esc(p.role)}</option>`).join('')}</select>`;
+  else inp = `<input${id}${req} type="${f.t === 'text' ? 'text' : f.t}"${f.t === 'tel' ? ' inputmode="tel"' : ''} autocomplete="off">`;
+  return `<div class="${f.t === 'long' || f.t === 'text' ? 'wide' : ''}"><label>${esc(f.l)}${f.r ? ' <em>*</em>' : ''}</label>${inp}</div>`;
+}
+function openForm(m, rec) {
+  const isNew = !rec || !rec.id, dlg = $('#dlg'), c = PH[m.phase];
+  rec = rec || {};
+  dlg.style.setProperty('--c', `var(--${c})`);
+  dlg.innerHTML = `<form novalidate><div class="dh"><b>${!m.rw ? 'View' : isNew ? 'Add' : 'Edit'} · ${esc(m.title)}</b><button type="button" class="icon" id="x" aria-label="Close">✕</button></div>
+    <div class="db">${m.fields.map(f => fieldHtml(f)).join('')}</div>
+    <div class="df">${isNew || !m.rw || !S.perms.del ? '' : '<button type="button" class="btn del" id="del">Delete</button>'}${m.rw ? '<button type="submit" class="btn">Save</button>' : '<button type="button" class="btn ghost" id="x2" style="flex:1">Close</button>'}</div></form>`;
+  const form = dlg.querySelector('form');
+  m.fields.forEach(f => { const el = form.elements[f.k]; if (!el) return; el.value = rec[f.k] != null ? rec[f.k] : (isNew && f.k === 'date' && f.t === 'date' ? TODAY : isNew && f.k === 'dept' && S.boot.user.role === 'Department head' ? S.boot.user.dept : ''); });
+  if (!m.rw) { form.querySelectorAll('input,select,textarea').forEach(el => el.disabled = true); $('#x2').onclick = () => dlg.close(); }
+  const get = k => form.elements[k] ? form.elements[k].value : '';
+  const refresh = () => m.fields.filter(f => f.c).forEach(f => {
+    const v = calc(f.c, get), el = form.querySelector(`[data-calc="${f.k}"]`);
+    el.textContent = v === '' ? '–' : show(f, v);
+  });
+  form.oninput = refresh; refresh();
+  form.addEventListener('change', e => { if (e.target.name === 'assignee' && form.elements.person && !form.elements.person.value.trim()) { const p = (S.boot.people || []).find(x => x.email === e.target.value); if (p) form.elements.person.value = p.name; } });
+  $('#x').onclick = () => dlg.close();
+  if ($('#del')) $('#del').onclick = () => { if (confirm('Delete this record?')) { dlg.close(); remove(m, rec.id); } };
+  form.onsubmit = e => {
+    e.preventDefault();
+    const bad = m.fields.find(f => f.r && !String(get(f.k)).trim());
+    if (bad) { form.elements[bad.k].reportValidity ? form.elements[bad.k].reportValidity() : 0; toast('Please fill in: ' + bad.l, 1); return; }
+    const out = { id: rec.id || '' };
+    m.fields.forEach(f => out[f.k] = f.c ? calc(f.c, get) : get(f.k).trim());
+    dlg.close(); persist(m, out);
+  };
+  dlg.showModal();
+}
+$('#dlg').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+/* ---------- save / delete (instant UI, syncs in background) ---------- */
+async function persist(m, rec) {
+  const L = () => S.data[m.key] || (S.data[m.key] = []), isNew = !rec.id;
+  const tmp = Object.assign({}, rec, { id: isNew ? 'tmp' + Date.now() : rec.id, _p: 1 });
+  const i0 = isNew ? -1 : L().findIndex(r => r.id === rec.id), old = i0 > -1 ? L()[i0] : null;
+  if (isNew) L().unshift(tmp); else if (i0 > -1) L()[i0] = tmp;
+  renderList();
+  try {
+    const saved = await api('saveRecord', m.key, rec);
+    const i = L().findIndex(r => r.id === tmp.id); if (i > -1) L()[i] = saved;
+    S.dash = null; S.rep = null; toast('Saved');
+  } catch (e) {
+    const i = L().findIndex(r => r.id === tmp.id);
+    if (i > -1) { if (isNew) L().splice(i, 1); else L()[i] = old; }
+    toast((e && e.message || 'Could not save').replace(/^Error: /, ''), 1);
+    if (S.cur === m.key) openForm(m, rec);
+  }
+  if (S.cur === m.key) renderList();
+}
+async function remove(m, id) {
+  const L = () => S.data[m.key], i0 = L().findIndex(r => r.id === id), old = L()[i0];
+  L().splice(i0, 1); renderList();
+  try { await api('deleteRecord', m.key, id); S.dash = null; S.rep = null; toast('Deleted'); }
+  catch (e) { L().splice(i0, 0, old); renderList(); toast('Could not delete', 1); }
+}
+
+/* ---------- team & emails (admin) ---------- */
+async function loadUsers(quiet) {
+  try { S.ulist = await api('listUsers'); S.boot.people = S.ulist.users.filter(x => x.active).map(x => ({email: x.email, name: x.name, role: x.role, dept: x.dept})); if (S.cur === 'users') renderUsers(); } catch (e) { if (!quiet) toast('Could not load users', 1); }
+}
+function renderUsers() {
+  const u = S.ulist;
+  let h = `<div class="bar" style="--c:var(--before)"><h2 style="--c:var(--before)"><i></i>Team & emails <small style="color:var(--mut);font-weight:500">${u ? u.users.length : ''}</small></h2><button class="icon" data-go="settings" aria-label="Settings">⚙️</button><button class="icon" id="rf" aria-label="Refresh">↻</button></div>`;
+  if (!u) h += '<div class="tiles kp">' + '<div class="tile sk"></div>'.repeat(3) + '</div>';
+  else {
+    h += '<div class="tiles kp">' + tile('before', u.users.filter(x => x.active).length, 'Active users', 'can sign in') + tile('after', u.users.filter(x => x.must && x.active).length, 'Awaiting first sign-in', 'still on temporary password') + tile('during', u.quota, 'Emails left today', 'daily sending limit') + '</div>';
+    h += `<h3 class="sec">Email tools</h3><div class="tools"><button class="btn" data-mail="reminders">⏰ Send task reminders now</button><button class="btn" data-mail="countdown">⏳ Send countdown email now</button><button class="btn" data-mail="test">✉️ Send me a test email</button></div>
+      <p class="hint">Automatic: task reminders go out every morning at 7am, and the launch countdown at key milestones (90, 60, 30, 21, 14, 10, 7, 5, 3, 2, 1 days and launch day).</p><h3 class="sec">People</h3><div class="list">` +
+      u.users.map(x => `<button class="card" data-u="${esc(x.email)}"><div class="r1"><b>${esc(x.name)}</b><span class="badge ${!x.active ? 'bad' : x.must ? 'warn' : 'good'}">${!x.active ? 'Inactive' : x.must ? 'Invited' : 'Active'}</span></div>
+        <div class="meta"><span><i>Role</i>${esc(x.role)}</span><span>${esc(x.email)}</span>${x.dept ? `<span><i>Dept</i>${esc(x.dept)}</span>` : ''}<span><i>Last sign-in</i>${esc(x.last || 'Never')}</span>${x.ov ? '<span><i>Custom access</i>Yes</span>' : ''}</div></button>`).join('') + '</div>';
+  }
+  h += '<button class="fab" id="addu" style="--c:var(--before)">+ Add user</button>';
+  $('#main').innerHTML = h;
+  $('#rf') && ($('#rf').onclick = () => loadUsers());
+  $('#addu').onclick = () => openUser();
+  document.querySelectorAll('[data-u]').forEach(b => b.onclick = () => openUser(b.dataset.u));
+  document.querySelectorAll('[data-mail]').forEach(b => b.onclick = async () => {
+    b.disabled = true; const t = b.textContent; b.textContent = 'Sending…';
+    try { const r = await api('emailAction', b.dataset.mail); toast(r.sent + ' email' + (r.sent === 1 ? '' : 's') + ' sent'); loadUsers(true); }
+    catch (e) { toast(errText(e), 1); }
+    b.disabled = false; b.textContent = t;
+  });
+}
+function openUser(email) {
+  const dlg = $('#dlg'), u = email ? S.ulist.users.find(x => x.email === email) : null, roles = S.ulist.roles, isNew = !u;
+  dlg.style.setProperty('--c', 'var(--before)');
+  const SEL = (opts, attr) => `<select ${attr}><option value="">Same as role</option>${opts.map(o => `<option value="${o[0]}">${o[1]}</option>`).join('')}</select>`;
+  const ovHtml = `<details class="wide" id="ovd"><summary>Custom access for this person (optional)</summary><p class="hint" style="margin:4px 0 0">Leave everything on “Same as role” unless this person needs more, or less, than their role allows.</p><div class="mx">
+    ${S.ulist.modules.map(m => `<div class="mxr"><span>${m.icon} ${esc(m.title)}</span>${SEL([['none', 'No access'], ['view', 'View only'], ['edit', 'Can edit']], 'data-ovm="' + m.key + '"')}</div>`).join('')}
+    <div class="mxh">Abilities</div>${[['dash', 'See the dashboard'], ['reports', 'See the reports'], ['del', 'Delete records'], ['scope', 'Only own department'], ['notify', 'Get task alert emails']].map(c => `<div class="mxr"><span>${c[1]}</span>${SEL([['yes', 'Yes'], ['no', 'No']], 'data-ovc="' + c[0] + '"')}</div>`).join('')}</div></details>`;
+  dlg.innerHTML = `<form novalidate><div class="dh"><b>${isNew ? 'Add user' : 'Edit user'}</b><button type="button" class="icon" id="x" aria-label="Close">✕</button></div>
+    <div class="db"><div class="wide"><label>Full name <em>*</em></label><input name="name" type="text" autocomplete="off"></div>
+    <div class="wide"><label>Email (they sign in with this) <em>*</em></label><input name="email" type="email" autocomplete="off" ${isNew ? '' : 'disabled'}></div>
+    <div><label>Role <em>*</em></label><select name="role"><option value="">Select…</option>${roles.map(r => `<option>${esc(r.name)}</option>`).join('')}</select></div>
+    <div><label>Department</label><select name="dept"><option value="">None</option>${(S.boot.lists.dept || []).map(d => `<option>${esc(d)}</option>`).join('')}</select></div>
+    <div class="wide hint" id="rinfo" style="margin:0"></div>${ovHtml}
+    ${isNew ? '<div class="wide hint" style="margin:0">A welcome email with a temporary password and sign-in link is sent automatically.</div>' : '<div class="wide"><label>Status</label><select name="active"><option value="Yes">Active</option><option value="No">Inactive (cannot sign in)</option></select></div>'}</div>
+    <div class="df">${isNew ? '' : '<button type="button" class="btn ghost" id="rst">Reset password</button>'}<button type="submit" class="btn">${isNew ? 'Add and email invite' : 'Save'}</button></div></form>`;
+  const f = dlg.querySelector('form');
+  if (u) { f.elements.name.value = u.name; f.elements.email.value = u.email; f.elements.role.value = u.role; f.elements.dept.value = u.dept; f.elements.active.value = u.active ? 'Yes' : 'No'; }
+  if (u && u.ov) {
+    Object.keys(u.ov.m || {}).forEach(k => { const e = f.querySelector(`[data-ovm="${k}"]`); if (e) e.value = u.ov.m[k]; });
+    Object.keys(u.ov.c || {}).forEach(k => { const e = f.querySelector(`[data-ovc="${k}"]`); if (e) e.value = u.ov.c[k] ? 'yes' : 'no'; });
+    $('#ovd').open = true;
+  }
+  const collectOv = () => {
+    const ov = {m: {}, c: {}};
+    f.querySelectorAll('[data-ovm]').forEach(e => { if (e.value) ov.m[e.dataset.ovm] = e.value; });
+    f.querySelectorAll('[data-ovc]').forEach(e => { if (e.value) ov.c[e.dataset.ovc] = e.value === 'yes'; });
+    return ov;
+  };
+  const info = () => { const r = roles.find(x => x.name === f.elements.role.value); $('#rinfo').textContent = r ? r.info : ''; };
+  f.elements.role.onchange = info; info();
+  $('#x').onclick = () => dlg.close();
+  if (!isNew) $('#rst').onclick = async () => {
+    if (!confirm('Email ' + u.name + ' a new temporary password?')) return;
+    try { const r = await api('resetUserPassword', u.email); dlg.close(); toast(r.emailed ? 'Reset email sent' : 'Email failed'); if (!r.emailed) prompt('The email could not be sent. Share this temporary password with ' + u.name + ':', r.temp); loadUsers(true); }
+    catch (e) { toast(errText(e), 1); }
+  };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const d = {isNew: isNew, name: f.elements.name.value.trim(), email: (isNew ? f.elements.email.value : u.email).trim(), role: f.elements.role.value, dept: f.elements.dept.value, active: isNew ? true : f.elements.active.value === 'Yes', ov: collectOv()};
+    if (!d.name || !d.email || !d.role) return toast('Name, email and role are required', 1);
+    if (d.role === 'Department head' && !d.dept) return toast('Choose the department for a department head', 1);
+    const b = f.querySelector('[type=submit]'); b.disabled = true;
+    try {
+      const r = await api('saveUser', d); dlg.close();
+      if (isNew) { toast(r.emailed ? 'Invitation emailed to ' + d.email : 'User added. Email could not be sent'); if (!r.emailed) prompt('The email could not be sent. Share this temporary password with ' + d.name + ':', r.temp); }
+      else toast('User updated');
+      loadUsers(true);
+    } catch (er) { b.disabled = false; toast(errText(er), 1); }
+  };
+  dlg.showModal();
+}
+
+/* ---------- global settings (admin) ---------- */
+const PRESETS = [['Royal blue', ['#151B3B', '#4457D6', '#0E9F85', '#D9822B']], ['Emerald', ['#0F2D2A', '#0E8F6B', '#3B82F6', '#E0A800']], ['Crimson', ['#2A0F1A', '#C2334D', '#0E9F85', '#D9822B']],
+  ['Violet', ['#1F1442', '#7C4DDB', '#0EA5A5', '#E58A2F']], ['Sunset', ['#2B1A10', '#D9822B', '#C93B3B', '#4457D6']], ['Slate', ['#1B2430', '#4A6785', '#2E8B7A', '#C58A3A']]];
+const FLAGS = [['dash', 'Can see the dashboard'], ['reports', 'Can see the reports'], ['del', 'Can delete records'], ['scope', 'Sees only their own department'], ['notify', 'Gets task alert emails']];
+async function loadSettings(quiet) {
+  try { S.cfg = await api('getAdminSettings'); if (S.cur === 'settings') renderSettings(); } catch (e) { if (!quiet) toast('Could not load settings', 1); }
+}
+function syncBoot() {                          // push saved general settings into the running app
+  const v = {}; S.cfg.fields.forEach(f => { v[f.k] = f.v; });
+  S.boot.s.church = v.church; S.boot.s.launch = v.launch; S.boot.s.date = v.date; S.boot.s.emoji = v.appEmoji || '⛪'; S.boot.s.theme = S.cfg.theme; EMOJI = S.boot.s.emoji;
+  $('#sub').textContent = v.launch; pill();
+}
+function renderSettings() {
+  const c = S.cfg;
+  let h = `<div class="bar" style="--c:var(--before)"><h2 style="--c:var(--before)"><i></i>Settings</h2><button class="icon" id="rf" aria-label="Refresh">↻</button></div>
+    <div class="seg s4">${[['general', 'General'], ['look', 'Colours'], ['roles', 'Roles'], ['lists', 'Lists']].map(x => `<button data-ss="${x[0]}" class="${S.sset === x[0] ? 'on' : ''}">${x[1]}</button>`).join('')}</div>`;
+  if (!c) h += '<div class="tile sk" style="min-height:220px"></div>';
+  else h += S.sset === 'general' ? setGeneral(c) : S.sset === 'look' ? setLook(c) : S.sset === 'roles' ? setRoles(c) : setLists(c);
+  $('#main').innerHTML = h;
+  $('#rf').onclick = () => loadSettings();
+  document.querySelectorAll('[data-ss]').forEach(b => b.onclick = () => { S.sset = b.dataset.ss; renderSettings(); });
+  if (c) ({general: bindGeneral, look: bindLook, roles: bindRoles, lists: bindLists})[S.sset]();
+}
+// ----- general
+function setGeneral(c) {
+  const fld = f => `<div class="${(f.t === 'text' || f.t === 'url') && f.k !== 'appEmoji' ? 'wide' : ''}"><label>${esc(f.l)}</label>` +
+    (f.t === 'yn' ? `<select name="${f.k}"><option>Yes</option><option>No</option></select>` : `<input name="${f.k}" type="${f.t === 'num' ? 'number' : f.t === 'text' ? 'text' : f.t}" ${f.t === 'num' ? 'inputmode="numeric" min="0"' : ''} autocomplete="off">`) + '</div>';
+  return `<form id="gf" class="box" novalidate><b>General settings</b><p class="hint" style="margin:2px 0 12px">These apply to everyone: the dashboard, the forms and the emails.</p><div class="db" style="padding:0;overflow:visible">${c.fields.map(fld).join('')}</div><button class="btn" style="width:100%;margin-top:16px" type="submit">Save settings</button></form>`;
+}
+function bindGeneral() {
+  const f = $('#gf'); S.cfg.fields.forEach(x => { f.elements[x.k].value = x.v; });
+  f.onsubmit = async e => {
+    e.preventDefault(); const vals = {}; S.cfg.fields.forEach(x => { vals[x.k] = f.elements[x.k].value; });
+    const b = f.querySelector('[type=submit]'); b.disabled = true;
+    try { S.cfg = await api('saveSettings', vals); syncBoot(); toast('Settings saved'); renderSettings(); } catch (er) { b.disabled = false; toast(errText(er), 1); }
+  };
+}
+// ----- colours
+function setLook(c) {
+  const t = S.draft || (S.draft = Object.assign({}, c.theme)), lab = [['navy', 'Header & brand'], ['before', 'Before the launch'], ['during', 'During the launch'], ['after', 'After the launch']];
+  return `<div class="box"><b>Pick a ready-made look</b><div class="presets">${PRESETS.map((p, i) => `<button type="button" class="preset" data-p="${i}">${p[1].map(x => `<span style="background:${x}"></span>`).join('')}<em>${p[0]}</em></button>`).join('')}</div></div>
+    <div class="box"><b>Or choose your own colours</b><div class="cols">${lab.map(l => `<label class="colr"><input type="color" data-col="${l[0]}" value="${t[l[0]]}"><span>${l[1]}<small>${t[l[0]]}</small></span></label>`).join('')}</div>
+    <p class="hint">Colours apply to everyone: the app, the public forms and the emails. You see changes instantly, and they are saved for everyone when you tap Save.</p>
+    <div class="df" style="padding:0;border:0"><button class="btn ghost" id="tr" type="button">Reset to default</button><button class="btn" id="ts" type="button">Save colours</button></div></div>`;
+}
+function bindLook() {
+  document.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { const p = PRESETS[+b.dataset.p][1]; S.draft = {navy: p[0], before: p[1], during: p[2], after: p[3]}; applyTheme(S.draft); renderSettings(); });
+  document.querySelectorAll('[data-col]').forEach(i => i.oninput = () => { S.draft[i.dataset.col] = i.value; applyTheme(S.draft); i.nextElementSibling.querySelector('small').textContent = i.value; });
+  $('#tr').onclick = () => { S.draft = Object.assign({}, DEF_THEME); applyTheme(S.draft); renderSettings(); };
+  $('#ts').onclick = async () => {
+    if (lum(S.draft.navy) > 0.6) return toast('Pick a darker header colour so the white text stays readable', 1);
+    if (['before', 'during', 'after'].some(k => lum(S.draft[k]) > 0.85)) return toast('One of the colours is too light. Pick a stronger colour', 1);
+    try { S.cfg = await api('saveSettings', {theme: S.draft}); S.boot.s.theme = S.cfg.theme; S.draft = null; applyTheme(S.cfg.theme); toast('Colours saved for everyone'); renderSettings(); } catch (e) { toast(errText(e), 1); }
+  };
+}
+// ----- roles & permissions
+function roleSummary(r) {
+  if (r.all) return '<span class="badge good" style="display:inline-block;margin-top:8px">Full access</span>';
+  const ed = S.cfg.modules.filter(m => r.access[m.key] === 'edit').length, vw = S.cfg.modules.filter(m => r.access[m.key] === 'view').length;
+  return `<div class="meta"><span><i>Can edit</i>${ed} tabs</span><span><i>View only</i>${vw} tabs</span></div><div class="chipset">${FLAGS.filter(f => r[f[0]]).map(f => `<span class="badge">${esc(f[1].replace('Sees only their own department', 'Own department only').replace(/^(Can see the |Can |Gets )/, ''))}</span>`).join('')}</div>`;
+}
+function setRoles(c) {
+  return `<div class="bar"><div style="flex:1"><b>Roles & permissions</b><div class="hint" style="margin:0">Decide what each role can see and do. Tap a role to change it.</div></div><button class="btn" id="nr" style="flex:none;min-height:44px;padding:0 16px">+ New role</button></div>
+    <div class="sgrid">${c.roles.map(r => `<button class="card" data-role="${esc(r.name)}"><div class="r1"><b>${esc(r.name)}</b><span class="badge">${r.users} user${r.users === 1 ? '' : 's'}</span></div><div class="hint" style="margin:4px 0 0">${esc(r.info)}</div>${roleSummary(r)}</button>`).join('')}</div>
+    <p class="hint">To give or take a right from <b>one person</b> only, open them on the Team & emails page and use “Custom access”.</p>`;
+}
+function bindRoles() {
+  $('#nr').onclick = () => openRole();
+  document.querySelectorAll('[data-role]').forEach(b => b.onclick = () => openRole(b.dataset.role));
+}
+function openRole(name) {
+  const c = S.cfg, dlg = $('#dlg'), r = name ? c.roles.find(x => x.name === name) : null, isNew = !r, locked = r && r.all;
+  dlg.style.setProperty('--c', 'var(--before)');
+  const SELV = k => `<select data-acc="${k}" ${locked ? 'disabled' : ''}><option value="">No access</option><option value="view">View only</option><option value="edit">Can edit</option></select>`;
+  dlg.innerHTML = `<form novalidate><div class="dh"><b>${isNew ? 'New role' : esc(name)}</b><button type="button" class="icon" id="x" aria-label="Close">✕</button></div><div class="db">
+    <div class="wide"><label>Role name <em>*</em></label><input name="name" type="text" autocomplete="off" ${isNew ? '' : 'disabled'}></div>
+    <div class="wide"><label>What this role is for</label><input name="info" type="text" autocomplete="off" ${locked ? 'disabled' : ''}></div>
+    ${isNew ? `<div class="wide"><label>Start from an existing role</label><select id="cp"><option value="">Blank (no access)</option>${c.roles.filter(x => !x.all).map(x => `<option>${esc(x.name)}</option>`).join('')}</select></div>` : ''}
+    ${locked ? '<div class="wide hint" style="margin:0">The Admin role always has full access to everything and cannot be changed. This protects you from locking yourself out.</div>' : ''}
+    <div class="wide"><div class="mxh" style="margin-top:0">Abilities</div><div class="mx">${FLAGS.map(f => `<div class="mxr"><span>${f[1]}</span><select data-flag="${f[0]}" ${locked ? 'disabled' : ''}><option value="no">No</option><option value="yes">Yes</option></select></div>`).join('')}</div></div>
+    <div class="wide"><div class="mxh" style="margin-top:0">Access to each tab</div><div class="mx">${['Before', 'During', 'After'].map(p => `<div class="mxh">${p} the launch</div>` + c.modules.filter(m => m.phase === p).map(m => `<div class="mxr"><span>${m.icon} ${esc(m.title)}</span>${SELV(m.key)}</div>`).join('')).join('')}</div></div></div>
+    <div class="df">${isNew || locked ? '' : '<button type="button" class="btn del" id="rdel">Delete role</button>'}${locked ? '<button type="button" class="btn ghost" id="x2" style="flex:1">Close</button>' : '<button type="submit" class="btn">Save role</button>'}</div></form>`;
+  const f = dlg.querySelector('form');
+  const fill = x => {
+    f.elements.info.value = x ? x.info : '';
+    FLAGS.forEach(fl => { f.querySelector(`[data-flag="${fl[0]}"]`).value = x && (x.all ? fl[0] !== 'scope' : x[fl[0]]) ? 'yes' : 'no'; });
+    f.querySelectorAll('[data-acc]').forEach(e => { e.value = x ? (x.all ? 'edit' : x.access[e.dataset.acc] || '') : ''; });
+  };
+  f.elements.name.value = r ? r.name : ''; fill(r);
+  if (isNew) $('#cp').onchange = e => fill(c.roles.find(x => x.name === e.target.value));
+  $('#x').onclick = () => dlg.close(); if ($('#x2')) $('#x2').onclick = () => dlg.close();
+  if ($('#rdel')) $('#rdel').onclick = async () => {
+    if (!confirm('Delete the role "' + name + '"?')) return;
+    try { S.cfg = await api('deleteRole', name); dlg.close(); toast('Role deleted'); renderSettings(); } catch (e) { toast(errText(e), 1); }
+  };
+  f.onsubmit = async e => {
+    e.preventDefault();
+    const role = {isNew: isNew, name: f.elements.name.value.trim(), info: f.elements.info.value.trim(), access: {}};
+    FLAGS.forEach(fl => { role[fl[0]] = f.querySelector(`[data-flag="${fl[0]}"]`).value === 'yes'; });
+    f.querySelectorAll('[data-acc]').forEach(x => { if (x.value) role.access[x.dataset.acc] = x.value; });
+    if (role.name.length < 2) return toast('Give the role a name', 1);
+    const b = f.querySelector('[type=submit]'); b.disabled = true;
+    try { S.cfg = await api('saveRole', role); dlg.close(); toast('Role saved. It applies to everyone with this role'); renderSettings(); } catch (er) { b.disabled = false; toast(errText(er), 1); }
+  };
+  dlg.showModal();
+}
+// ----- dropdown lists
+function setLists(c) {
+  const cur = c.lists.find(l => l.key === S.listKey) || c.lists[0]; S.listKey = cur.key;
+  return `<div class="box"><b>Dropdown lists</b><p class="hint" style="margin:2px 0 12px">Edit the choices people see in forms, for example departments, services or payment methods. One choice per line.</p>
+    <label>List</label><select id="lk">${c.lists.map(l => `<option value="${l.key}" ${l.key === cur.key ? 'selected' : ''}>${esc(l.label)}</option>`).join('')}</select>
+    <label style="margin-top:12px">Choices</label><textarea id="lt" rows="10" style="min-height:220px"></textarea>
+    <button class="btn" id="ls" style="width:100%;margin-top:14px" type="button">Save list</button></div>`;
+}
+function bindLists() {
+  const c = S.cfg, fill = () => { $('#lt').value = c.lists.find(l => l.key === S.listKey).items.join('\n'); };
+  fill();
+  $('#lk').onchange = e => { S.listKey = e.target.value; fill(); };
+  $('#ls').onclick = async () => {
+    const items = $('#lt').value.split('\n').map(x => x.trim()).filter(Boolean);
+    try { S.cfg = await api('saveList', S.listKey, items); S.boot.lists[S.listKey] = S.cfg.lists.find(l => l.key === S.listKey).items; toast('List saved'); renderSettings(); } catch (e) { toast(errText(e), 1); }
+  };
+}
+
+/* ---------- start ---------- */
+function pill() {
+  const d = Math.round((new Date(S.boot.s.date + 'T00:00:00') - new Date(TODAY + 'T00:00:00')) / 864e5), p = $('#pill');
+  p.hidden = isNaN(d); p.textContent = d > 1 ? d + ' days to launch' : d === 1 ? 'Launch is tomorrow' : d === 0 ? 'Launch day!' : 'Launched';
+}
+async function start() {
+  if (!APP.inGas && !APP.backendUrl) return showSetup();
+  if (!TOKEN) { await loadPublic(); return showLogin(); }
+  $('#main').innerHTML = '<div class="tiles">' + '<div class="tile sk"></div>'.repeat(6) + '</div>';
+  try {
+    S.boot = await api('getBootstrap'); S.perms = S.boot.perms; S.user = S.boot.user;
+    applyTheme(S.boot.s.theme); EMOJI = S.boot.s.emoji || '⛪';
+    document.body.classList.remove('auth');
+    const me = $('#me'); me.hidden = false; me.textContent = initials(S.user.name);
+    history.replaceState({k: 'home'}, '');
+    pill(); go('home', false);
+  } catch (e) {
+    if (/AUTH_REQUIRED|PW_CHANGE/.test(e && e.message)) return;
+    $('#main').innerHTML = '<div class="empty">Could not start the app.<br>' + esc(errText(e)) + '<br><br><button class="btn" style="padding:0 24px" onclick="location.reload()">Try again</button></div>';
+  }
+}
+start();
+setInterval(() => { if (!S.boot || document.hidden || $('#dlg').open) return; refresh(true); }, 45000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && S.boot && !$('#dlg').open) refresh(true); });
+</script>
+</body>
+</html>
